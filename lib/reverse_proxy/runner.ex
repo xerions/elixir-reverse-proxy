@@ -29,8 +29,12 @@ defmodule ReverseProxy.Runner do
     conn |> Plug.Conn.send_resp(502, "Bad Gateway")
   end
   defp process_response({:ok, response}, conn) do
+    # TODO: quick fix for chunked-encoded responses.
+    # the real fix is to deliver the content from the
+    # reverse proxy as it is.
+    headers = List.keydelete(response.headers, "Transfer-Encoding", 0)
     conn
-      |> put_resp_headers(response.headers)
+      |> put_resp_headers(headers)
       |> Plug.Conn.send_resp(response.status_code, response.body)
   end
 
