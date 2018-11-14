@@ -8,20 +8,24 @@ defmodule ReverseProxy.Runner do
   @typedoc "Representation of an upstream service."
   @type upstream :: [String.t] | {Atom.t, Keyword.t}
 
-  @spec retreive(Conn.t, upstream) :: Conn.t
-  def retreive(conn, upstream)
-  def retreive(conn, {plug, opts}) when plug |> is_atom do
+  @spec retreive(Conn.t, upstream, Keyword.t) :: Conn.t
+
+
+  @spec retreive(Conn.t, upstream, Keyword.t) :: Conn.t
+  def retreive(conn, upstream, opts \\ [])
+  def retreive(conn, upstream, client) when client |> is_atom, do: retreive(conn, upstream, [client: client])
+  def retreive(conn, {plug, opts}, _) when plug |> is_atom do
     options = plug.init(opts)
     plug.call(conn, options)
   end
+  def retreive(conn, servers, opts) do
+    client  = Keyword.get(opts, :client, HTTPoison)
 
-  @spec retreive(Conn.t, upstream, Atom.t) :: Conn.t
-  def retreive(conn, servers, client \\ HTTPoison) do
     server = upstream_select(servers)
     {method, url, body, headers} = prepare_request(server, conn)
 
     method
-      |> client.request(url, body, headers, timeout: 5_000)
+      |> client.request(url, body, headers, opts |> Keyword.drop([:client]))
       |> process_response(conn)
   end
 

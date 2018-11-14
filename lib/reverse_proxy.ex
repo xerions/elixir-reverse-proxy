@@ -27,7 +27,7 @@ defmodule ReverseProxy do
     upstream = Keyword.get(opts, :upstream, [])
     callback = fn conn ->
       runner = Application.get_env(:reverse_proxy, :runner, ReverseProxy.Runner)
-      runner.retreive(conn, upstream)
+      runner.retreive(conn, upstream, opts |> Keyword.drop([:upstream]))
     end
 
     if Application.get_env(:reverse_proxy, :cache, false) do
